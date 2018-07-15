@@ -158,8 +158,7 @@ void outputcolor ( int foreground, int background)
    * Restore the original colors
    */
   //SetConsoleTextAttribute ( h, wOldColorAttrs);
-  return 0;
-}
+ }
 /* --------------------- */
 /* Dynamic List routines */
 /* --------------------- */
@@ -539,7 +538,7 @@ int main() {
   system("cls");
   gotoxy(6,3);
   outputcolor(F_BLUE,BH_WHITE);
-  printf("Use 'w' down and 's' for scroll");
+  printf("Use 'w' up and 's' down for scroll");
   addItems(&listBox1);
 
   /*========================================================================*/
