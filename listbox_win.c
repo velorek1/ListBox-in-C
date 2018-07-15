@@ -3,7 +3,7 @@
    +Scroll function added.
    Last modified : 15/7/2018
    Coded by Velorek.
-   Target OS: Linux.                                                  */
+   Target OS: Windows.                                                  */
 /*====================================================================*/
 
 /*====================================================================*/
@@ -154,9 +154,7 @@ void outputcolor ( int foreground, int background)
    */
   SetConsoleTextAttribute ( h, foreground | background );
 
- // printf ( "This is a test\n" );
-
-  /*
+   /*
    * Restore the original colors
    */
   //SetConsoleTextAttribute ( h, wOldColorAttrs);
