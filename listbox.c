@@ -88,7 +88,6 @@ char    getch();
 void    deleteList(LISTCHOICE ** head);
 LISTCHOICE *addend(LISTCHOICE * head, LISTCHOICE * newp);
 LISTCHOICE *newelement(char *text);
-LISTCHOICE *addfront(LISTCHOICE * head, LISTCHOICE * newp);
 
 //LISTBOX FUNCTIONS
 void    addItems(LISTCHOICE ** listBox1);
