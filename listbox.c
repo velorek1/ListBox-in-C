@@ -24,6 +24,8 @@
 #define CONTINUE_SCROLL -1
 #define DOWN_SCROLL 1
 #define UP_SCROLL 0
+#define SELECT_ITEM 1
+#define UNSELECT_ITEM 0
 // Colors used.                                                                         
 #define B_BLACK 40
 #define B_BLUE 44
@@ -103,8 +105,10 @@ void    gotoIndex(LISTCHOICE ** aux, SCROLLDATA * scrollData,
 int     query_length(LISTCHOICE ** head);
 int     move_selector(LISTCHOICE ** head, SCROLLDATA * scrollData);
 char    selectorMenu(LISTCHOICE * aux, SCROLLDATA * scrollData);
+void    highlight_item(LISTCHOICE * aux, SCROLLDATA * scrollData,
+		       int select);
 
-/*====================================================================*/
+  /*====================================================================*/
 /* CODE */
 /*====================================================================*/
 
@@ -208,9 +212,10 @@ void gotoIndex(LISTCHOICE ** aux, SCROLLDATA * scrollData,
     counter++;
   }
   //Highlight current item
-  gotoxy(scrollData->wherex, scrollData->selector);
-  outputcolor(scrollData->foreColor1, scrollData->backColor1);
-  printf("%s\n", aux2->item);
+
+  highlight_item(aux2, scrollData, SELECT_ITEM);
+
+  //Update pointer
   *aux = aux2;
 }
 
@@ -253,6 +258,24 @@ int query_length(LISTCHOICE ** head) {
 
 }
 
+void highlight_item(LISTCHOICE * aux, SCROLLDATA * scrollData, int select)
+//Select or unselect item animation
+{
+  switch (select) {
+
+    case SELECT_ITEM:
+      gotoxy(scrollData->wherex, scrollData->selector);
+      outputcolor(scrollData->foreColor1, scrollData->backColor1);
+      printf("%s\n", aux->item);
+      break;
+
+    case UNSELECT_ITEM:
+      gotoxy(scrollData->wherex, scrollData->selector);
+      outputcolor(scrollData->foreColor0, scrollData->backColor0);
+      printf("%s\n", aux->item);
+      break;
+  }
+}
 int move_selector(LISTCHOICE ** selector, SCROLLDATA * scrollData) {
 /* 
 Creates animation by moving a selector highlighting next item and
@@ -270,9 +293,7 @@ unselecting previous ite,
      || (aux->back != NULL && scrollData->scrollDirection == UP_SCROLL)) {
 
     //Unselect previous item
-    gotoxy(scrollData->wherex, scrollData->selector);
-    outputcolor(scrollData->foreColor0, scrollData->backColor0);
-    printf("%s\n", aux->item);
+    highlight_item(aux, scrollData, UNSELECT_ITEM);
 
     //Check whether we move UP or Down
     switch (scrollData->scrollDirection) {
@@ -330,10 +351,9 @@ unselecting previous ite,
 	   scrollControl, scrollData->scrollActive, continueScroll);
 
     //Highlight new item
-    gotoxy(scrollData->wherex, scrollData->selector);
-    outputcolor(scrollData->foreColor1, scrollData->backColor1);
-    printf("%s\n", aux->item);
+    highlight_item(aux, scrollData, SELECT_ITEM);
 
+    //Update selector pointer
     *selector = aux;
   }
   return continueScroll;
