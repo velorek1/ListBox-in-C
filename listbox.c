@@ -558,4 +558,5 @@ int main() {
   deleteList(&listBox1);
   outputcolor(F_WHITE, B_BLACK);
   printf("\n");
+  return 0;
 }
