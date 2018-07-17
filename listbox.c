@@ -26,6 +26,9 @@
 #define UP_SCROLL 0
 #define SELECT_ITEM 1
 #define UNSELECT_ITEM 0
+#define CIRCULAR_ACTIVE 1
+#define CIRCULAR_INACTIVE 0
+
 // Colors used.                                                                         
 #define B_BLACK 40
 #define B_BLUE 44
@@ -107,7 +110,7 @@ int     move_selector(LISTCHOICE ** head, SCROLLDATA * scrollData);
 char    selectorMenu(LISTCHOICE * aux, SCROLLDATA * scrollData);
 void    displayItem(LISTCHOICE * aux, SCROLLDATA * scrollData, int select);
 
-  /*====================================================================*/
+/*====================================================================*/
 /* CODE */
 /*====================================================================*/
 
@@ -278,83 +281,112 @@ void displayItem(LISTCHOICE * aux, SCROLLDATA * scrollData, int select)
 int move_selector(LISTCHOICE ** selector, SCROLLDATA * scrollData) {
 /* 
 Creates animation by moving a selector highlighting next item and
-unselecting previous ite,
+unselecting previous item
 */
 
   LISTCHOICE *aux;
-  unsigned scrollControl = 0, continueScroll = 0;
+  unsigned scrollControl = 0, continueScroll = 0, circular =
+      CIRCULAR_INACTIVE;
 
   //Auxiliary pointer points to selector.
   aux = *selector;
 
-  //Check if we are within boundaries.
-  if((aux->next != NULL && scrollData->scrollDirection == DOWN_SCROLL)
-     || (aux->back != NULL && scrollData->scrollDirection == UP_SCROLL)) {
-
-    //Unselect previous item
+  //Circular list animation when not scrolling.
+  if(aux->index == scrollData->listLength - 1
+     && scrollData->scrollActive == SCROLL_INACTIVE
+     && scrollData->scrollDirection == DOWN_SCROLL) {
+    //After last item go back to the top.
     displayItem(aux, scrollData, UNSELECT_ITEM);
-
-    //Check whether we move UP or Down
-    switch (scrollData->scrollDirection) {
-
-      case UP_SCROLL:
-	//Calculate new top index if scroll is active 
-	//otherwise it defaults to 0 (top)
-	if(scrollData->scrollActive == SCROLL_ACTIVE)
-	  scrollControl = scrollData->currentListIndex;
-	else
-	  scrollControl = 0;
-
-	//Move selector
-	if(aux->back->index >= scrollControl) {
-	  scrollData->selector--;	//whereY--
-	  aux = aux->back;	//Go to previous item
-	} else {
-	  if(scrollData->scrollActive == SCROLL_ACTIVE)
-	    continueScroll = 1;
-	  else
-	    continueScroll = 0;
-	}
-	break;
-
-      case DOWN_SCROLL:
-	//Calculate bottom index limit if scroll is ACTIVE
-	//Otherwise it defaults to scrollData->ListLength-1
-
-	if(scrollData->scrollActive == SCROLL_ACTIVE)
-	  scrollControl =
-	      scrollData->currentListIndex + (scrollData->displayLimit -
-					      1);
-	else
-	  scrollControl = scrollData->listLength - 1;
-
-	//Move selector
-	if(aux->next->index <= scrollControl) {
-	  aux = aux->next;	//Go to next item
-	  scrollData->selector++;	//whereY++;
-	} else {
-	  if(scrollData->scrollActive == SCROLL_ACTIVE)
-	    continueScroll = 1;
-	  else
-	    continueScroll = 0;
-	}
-	break;
-    }
-
-    //Metrics
-    gotoxy(6, 5);
-    printf("Length:%d|Index:%d|Memory addr:%p",
-	   scrollData->listLength, aux->index, aux);
-    gotoxy(6, 6);
-    printf("Scroll Limit: %d|IsScActive?:%d|ContinueScroll: %d",
-	   scrollControl, scrollData->scrollActive, continueScroll);
-
-    //Highlight new item
-    displayItem(aux, scrollData, SELECT_ITEM);
-
-    //Update selector pointer
+    scrollData->selector = scrollData->wherey;
+    gotoIndex(&aux, scrollData, 0);
     *selector = aux;
+    circular = CIRCULAR_ACTIVE;
   }
+
+  if(aux->index == 0 && scrollData->scrollActive == SCROLL_INACTIVE
+     && scrollData->scrollDirection == UP_SCROLL) {
+    //Before first item go back to the bottom.
+    displayItem(aux, scrollData, UNSELECT_ITEM);
+    scrollData->selector = scrollData->wherey + scrollData->listLength - 1;
+    gotoIndex(&aux, scrollData, scrollData->listLength - 1);
+    *selector = aux;
+    circular = CIRCULAR_ACTIVE;
+  }
+  //Check if we do the circular list animation.
+  //If active, we skip the code one time.
+
+  if(circular == CIRCULAR_INACTIVE) {
+
+    //Check if we are within boundaries.
+    if((aux->next != NULL && scrollData->scrollDirection == DOWN_SCROLL)
+       || (aux->back != NULL && scrollData->scrollDirection == UP_SCROLL)) {
+
+      //Unselect previous item
+      displayItem(aux, scrollData, UNSELECT_ITEM);
+
+      //Check whether we move UP or Down
+      switch (scrollData->scrollDirection) {
+
+	case UP_SCROLL:
+	  //Calculate new top index if scroll is active 
+	  //otherwise it defaults to 0 (top)
+	  if(scrollData->scrollActive == SCROLL_ACTIVE)
+	    scrollControl = scrollData->currentListIndex;
+	  else
+	    scrollControl = 0;
+
+	  //Move selector
+	  if(aux->back->index >= scrollControl) {
+	    scrollData->selector--;	//whereY--
+	    aux = aux->back;	//Go to previous item
+	  } else {
+	    if(scrollData->scrollActive == SCROLL_ACTIVE)
+	      continueScroll = 1;
+	    else
+	      continueScroll = 0;
+	  }
+	  break;
+
+	case DOWN_SCROLL:
+	  //Calculate bottom index limit if scroll is ACTIVE
+	  //Otherwise it defaults to scrollData->ListLength-1
+
+	  if(scrollData->scrollActive == SCROLL_ACTIVE)
+	    scrollControl =
+		scrollData->currentListIndex + (scrollData->displayLimit -
+						1);
+	  else
+	    scrollControl = scrollData->listLength - 1;
+
+	  //Move selector
+	  if(aux->next->index <= scrollControl) {
+	    aux = aux->next;	//Go to next item
+	    scrollData->selector++;	//whereY++;
+	  } else {
+	    if(scrollData->scrollActive == SCROLL_ACTIVE)
+	      continueScroll = 1;
+	    else
+	      continueScroll = 0;
+	  }
+	  break;
+      }
+
+      //Metrics
+      gotoxy(6, 5);
+      printf("Length:%d|Index:%d|Memory addr:%p",
+	     scrollData->listLength, aux->index, aux);
+      gotoxy(6, 6);
+      printf("Scroll Limit: %d|IsScActive?:%d|ContinueScroll: %d",
+	     scrollControl, scrollData->scrollActive, continueScroll);
+
+      //Highlight new item
+      displayItem(aux, scrollData, SELECT_ITEM);
+
+      //Update selector pointer
+      *selector = aux;
+    }
+  }
+  circular = CIRCULAR_INACTIVE;
   return continueScroll;
 }
 
@@ -428,9 +460,9 @@ char selectorMenu(LISTCHOICE * aux, SCROLLDATA * scrollData) {
 	    scrollData->item = aux->item;
 	    scrollData->itemIndex = aux->index;
 	    scrollData->scrollDirection = DOWN_SCROLL;
-	    //Return value  
-	    ch = control;
 	  }
+	  //Return value  
+	  ch = control;
 	  break;
       }
     }
@@ -445,9 +477,10 @@ char selectorMenu(LISTCHOICE * aux, SCROLLDATA * scrollData) {
 }
 
 char listBox(LISTCHOICE * head,
-	     unsigned whereX, unsigned whereY, SCROLLDATA * scrollData,
-	     unsigned bColor0, unsigned fColor0, unsigned bColor1,
-	     unsigned fColor1, unsigned displayLimit) {
+	     unsigned whereX, unsigned whereY,
+	     SCROLLDATA * scrollData, unsigned bColor0,
+	     unsigned fColor0, unsigned bColor1, unsigned fColor1,
+	     unsigned displayLimit) {
 
   unsigned list_length = 0;
   //unsigned currentIndex = 0;
@@ -550,8 +583,8 @@ int main() {
   //Item selected.
   gotoxy(1, 14);
   outputcolor(FH_WHITE, B_BLUE);
-  printf("Item selected: %s | Index: %d | Key : %d\n", scrollData.item,
-	 scrollData.itemIndex, ch);
+  printf("With Scroll! Item selected: %s | Index: %d | Key : %d\n",
+	 scrollData.item, scrollData.itemIndex, ch);
 
   //Free memory and restore colors.
   deleteList(&listBox1);
