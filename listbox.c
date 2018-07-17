@@ -1,7 +1,7 @@
 /*====================================================================*/
 /* +ListBox with double linked list and selection menu in C.
    +Scroll function added.
-   Last modified : 15/7/2018
+   Last modified : 17/7/2018
    Coded by Velorek.
    Target OS: Linux.                                                  */
 /*====================================================================*/
@@ -105,8 +105,7 @@ void    gotoIndex(LISTCHOICE ** aux, SCROLLDATA * scrollData,
 int     query_length(LISTCHOICE ** head);
 int     move_selector(LISTCHOICE ** head, SCROLLDATA * scrollData);
 char    selectorMenu(LISTCHOICE * aux, SCROLLDATA * scrollData);
-void    highlight_item(LISTCHOICE * aux, SCROLLDATA * scrollData,
-		       int select);
+void    displayItem(LISTCHOICE * aux, SCROLLDATA * scrollData, int select);
 
   /*====================================================================*/
 /* CODE */
@@ -213,7 +212,7 @@ void gotoIndex(LISTCHOICE ** aux, SCROLLDATA * scrollData,
   }
   //Highlight current item
 
-  highlight_item(aux2, scrollData, SELECT_ITEM);
+  displayItem(aux2, scrollData, SELECT_ITEM);
 
   //Update pointer
   *aux = aux2;
@@ -226,20 +225,20 @@ in scrollData.
 */
 
   LISTCHOICE *aux;
-  unsigned wherex, wherey, counter = 0;
+  unsigned wherey, counter = 0;
 
   aux = head;
   gotoIndex(&aux, scrollData, indexAt);
-  wherex = scrollData->wherex;
+  /* Save values */
+  //wherex = scrollData->wherex;
   wherey = scrollData->wherey;
   do {
-    gotoxy(wherex, wherey);
-    outputcolor(scrollData->foreColor0, scrollData->backColor0);
-    printf("%s\n", aux->item);
+    displayItem(aux, scrollData, UNSELECT_ITEM);
     aux = aux->next;
     counter++;
-    wherey++;
+    scrollData->selector++;	// wherey++
   } while(counter != scrollData->displayLimit);
+  scrollData->selector = wherey;	//restore value
 }
 
 int query_length(LISTCHOICE ** head) {
@@ -258,7 +257,7 @@ int query_length(LISTCHOICE ** head) {
 
 }
 
-void highlight_item(LISTCHOICE * aux, SCROLLDATA * scrollData, int select)
+void displayItem(LISTCHOICE * aux, SCROLLDATA * scrollData, int select)
 //Select or unselect item animation
 {
   switch (select) {
@@ -293,7 +292,7 @@ unselecting previous ite,
      || (aux->back != NULL && scrollData->scrollDirection == UP_SCROLL)) {
 
     //Unselect previous item
-    highlight_item(aux, scrollData, UNSELECT_ITEM);
+    displayItem(aux, scrollData, UNSELECT_ITEM);
 
     //Check whether we move UP or Down
     switch (scrollData->scrollDirection) {
@@ -351,7 +350,7 @@ unselecting previous ite,
 	   scrollControl, scrollData->scrollActive, continueScroll);
 
     //Highlight new item
-    highlight_item(aux, scrollData, SELECT_ITEM);
+    displayItem(aux, scrollData, SELECT_ITEM);
 
     //Update selector pointer
     *selector = aux;

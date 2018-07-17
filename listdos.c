@@ -1,9 +1,9 @@
 /*====================================================================*/
 /* +ListBox with double linked list and selection menu in C.
    +Scroll function added.
-   Last modified : 15/7/2018
+   Last modified : 17/7/2018
    Coded by Velorek.
-   Target OS: DOS.                                                  */
+   Target OS: DOS. NO ANSI                                            */
 /*====================================================================*/
 
 /*====================================================================*/
@@ -24,11 +24,11 @@
 #define SELECT_ITEM 1
 #define UNSELECT_ITEM 0
 /* Colors used.   */
-#define B_BLACK 40
-#define B_BLUE 44
-#define F_BLACK 30
-#define F_WHITE 37
-#define FH_WHITE 97
+#define B_BLACK 0x7
+#define B_BLUE 0x1F
+#define F_BLACK 0x7
+#define F_WHITE 0x7F
+#define FH_WHITE 0x7F
 /*Keys used.*/
 #define K_ENTER 28
 #define K_ESCAPE 27
@@ -76,10 +76,11 @@ LISTCHOICE *listBox1 = NULL;	/*Head pointer.*/
 /*====================================================================*/
 
 /*CONSOLE DISPLAY FUNCTIONS*/
-void    gotoxy(int x, int y);
-void    outputcolor(int foreground, int background);
+void    writechar(char ch, char color);
+void    gotoxy(char x, char y);
+void    outputcolor(int foreground, int background, char *str);
 char    getch();
-
+void    cls();
 /*DYNAMIC LINKED LIST FUNCTIONS*/
 void    deleteList(LISTCHOICE ** head);
 LISTCHOICE *addend(LISTCHOICE * head, LISTCHOICE * newp);
@@ -99,7 +100,7 @@ void    gotoIndex(LISTCHOICE ** aux, SCROLLDATA * scrollData,
 int     query_length(LISTCHOICE ** head);
 int     move_selector(LISTCHOICE ** head, SCROLLDATA * scrollData);
 char    selectorMenu(LISTCHOICE * aux, SCROLLDATA * scrollData);
-void    highlight_item(LISTCHOICE * aux, SCROLLDATA * scrollData,
+void    displayItem(LISTCHOICE * aux, SCROLLDATA * scrollData,
 		       int select);
 
 /*====================================================================*/
@@ -110,16 +111,65 @@ void    highlight_item(LISTCHOICE * aux, SCROLLDATA * scrollData,
 /* Terminal manipulation routines */
 /* ------------------------------ */
 
-void gotoxy(int x, int y)
+void gotoxy(char x, char y)
 /*Sets the cursor at the desired position.*/
 {
-  printf("%c[%d;%df", 0x1B, y, x);
-}
 
-void outputcolor(int foreground, int background)
+ /*  printf("%c[%d;%df", 0x1B, y, x);  */
+ /*inline assembler or ansi */
+ asm {
+    mov ah,02h
+    mov dh,y
+    mov dl,x
+    mov bh,0
+    int 10h
+  }
+}
+void cls()
+{
+asm {
+  mov ax, 3h
+  mov bh, 00h
+  mov bl, 0h
+  int 10h
+}
+}
+void writechar(char ch, char color)
+{
+//printf("%d:%c-",ch,ch);
+char chaux,coloraux;
+/*
+Note:
+these need to be local variables
+so that they can be accessed by
+assembler compiler */
+chaux=ch;
+coloraux=color;
+  asm{
+    mov ah,02h   //wherex++;
+    inc dl
+    mov bh,0
+    int 10h
+    mov ah,9  //print char with cholor
+    mov bh,0
+    mov al, chaux
+    mov bl, coloraux
+    mov cx, 1
+    int 10h
+  }
+}
+void outputcolor(int foreground, int background, char *str)
 /*Changes format foreground and background colors of display.*/
 {
-  printf("%c[%d;%dm", 0x1b, foreground, background);
+  /* printf("%c[%d;%dm", 0x1b, foreground, background); */
+  char color;
+  char cha,length,i;
+  color = background & foreground;
+  length = strlen(str);
+  for (i=0;i<length;i++){
+      cha = str[i];
+      writechar(cha,color);
+  }
 }
 
 
@@ -196,7 +246,7 @@ void gotoIndex(LISTCHOICE ** aux, SCROLLDATA * scrollData,
   }
   /*Highlight current item*/
 
-  highlight_item(aux2, scrollData, SELECT_ITEM);
+  displayItem(aux2, scrollData, SELECT_ITEM);
 
   /*Update pointer*/
   *aux = aux2;
@@ -209,20 +259,20 @@ in scrollData.
 */
 
   LISTCHOICE *aux;
-  unsigned wherex, wherey, counter = 0;
+  unsigned wherey, counter = 0;
 
   aux = head;
   gotoIndex(&aux, scrollData, indexAt);
-  wherex = scrollData->wherex;
+  /* save values for later*/
+  /* wherex = scrollData->wherex; */
   wherey = scrollData->wherey;
   do {
-    gotoxy(wherex, wherey);
-    outputcolor(scrollData->foreColor0, scrollData->backColor0);
-    printf("%s\n", aux->item);
+    displayItem(aux, scrollData, UNSELECT_ITEM);
     aux = aux->next;
     counter++;
-    wherey++;
+    scrollData->selector++;  /* y++ */
   } while(counter != scrollData->displayLimit);
+  scrollData->selector=wherey; /* reset selector */
 }
 
 int query_length(LISTCHOICE ** head) {
@@ -241,21 +291,21 @@ int query_length(LISTCHOICE ** head) {
 
 }
 
-void highlight_item(LISTCHOICE * aux, SCROLLDATA * scrollData, int select)
+void displayItem(LISTCHOICE * aux, SCROLLDATA * scrollData, int select)
 /*Select or unselect item animation*/
 {
   switch (select) {
 
     case SELECT_ITEM:
       gotoxy(scrollData->wherex, scrollData->selector);
-      outputcolor(scrollData->foreColor1, scrollData->backColor1);
-      printf("%s\n", aux->item);
+      outputcolor(scrollData->foreColor1, scrollData->backColor1,aux->item);
+      /*printf("%s\n", aux->item); */
       break;
 
     case UNSELECT_ITEM:
       gotoxy(scrollData->wherex, scrollData->selector);
-      outputcolor(scrollData->foreColor0, scrollData->backColor0);
-      printf("%s\n", aux->item);
+      outputcolor(scrollData->foreColor0, scrollData->backColor0,aux->item);
+      /*printf("%s\n", aux->item);*/
       break;
   }
 }
@@ -276,7 +326,7 @@ unselecting previous ite,
      || (aux->back != NULL && scrollData->scrollDirection == UP_SCROLL)) {
 
     /*Unselect previous item*/
-    highlight_item(aux, scrollData, UNSELECT_ITEM);
+    displayItem(aux, scrollData, UNSELECT_ITEM);
 
     /*Check whether we move UP or Down*/
     switch (scrollData->scrollDirection) {
@@ -334,7 +384,7 @@ unselecting previous ite,
 	   scrollControl, scrollData->scrollActive, continueScroll);
 
     /*Highlight new item*/
-    highlight_item(aux, scrollData, SELECT_ITEM);
+    displayItem(aux, scrollData, SELECT_ITEM);
 
     /*Update selector pointer*/
     *selector = aux;
@@ -514,7 +564,7 @@ int main() {
   SCROLLDATA scrollData;
   char    ch;
 
-  system("cls");
+  cls();
   addItems(&listBox1);
 
   /*========================================================================*/
@@ -533,13 +583,11 @@ int main() {
 
   /*Item selected. */
   gotoxy(1, 14);
-  outputcolor(FH_WHITE, B_BLUE);
+  //outputcolor(FH_WHITE, B_BLUE, "Hello");
   printf("Item selected: %s | Index: %d | Key : %d\n", scrollData.item,
 	 scrollData.itemIndex, ch);
 
   /*Free memory and restore colors. */
   deleteList(&listBox1);
-  outputcolor(F_WHITE, B_BLACK);
-  printf("\n");
   return 0;
 }
