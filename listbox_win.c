@@ -36,7 +36,7 @@
 //Keys used.
 #define K_ENTER 13
 //#define K_ESCAPE 27
-#define K_UP_ARROW 'w'
+#define K_UP_ARROW 'w' //These values were chosen for convention
 #define K_DOWN_ARROW 's'
 
 /*====================================================================*/
@@ -104,8 +104,7 @@ void    gotoIndex(LISTCHOICE ** aux, SCROLLDATA * scrollData,
 int     query_length(LISTCHOICE ** head);
 int     move_selector(LISTCHOICE ** head, SCROLLDATA * scrollData);
 char    selectorMenu(LISTCHOICE * aux, SCROLLDATA * scrollData);
-void    highlight_item(LISTCHOICE * aux, SCROLLDATA * scrollData,
-		       int select);
+void    displayItem(LISTCHOICE * aux, SCROLLDATA * scrollData, int select);
 
   /*====================================================================*/
 /* CODE */
@@ -221,7 +220,7 @@ void gotoIndex(LISTCHOICE ** aux, SCROLLDATA * scrollData,
   }
   //Highlight current item
 
-  highlight_item(aux2, scrollData, SELECT_ITEM);
+  displayItem(aux2, scrollData, SELECT_ITEM);
 
   //Update pointer
   *aux = aux2;
@@ -266,7 +265,7 @@ int query_length(LISTCHOICE ** head) {
 
 }
 
-void highlight_item(LISTCHOICE * aux, SCROLLDATA * scrollData, int select)
+void displayItem(LISTCHOICE * aux, SCROLLDATA * scrollData, int select)
 //Select or unselect item animation
 {
   switch (select) {
@@ -284,6 +283,7 @@ void highlight_item(LISTCHOICE * aux, SCROLLDATA * scrollData, int select)
       break;
   }
 }
+
 int move_selector(LISTCHOICE ** selector, SCROLLDATA * scrollData) {
 /*
 Creates animation by moving a selector highlighting next item and
@@ -301,7 +301,7 @@ unselecting previous ite,
      || (aux->back != NULL && scrollData->scrollDirection == UP_SCROLL)) {
 
     //Unselect previous item
-    highlight_item(aux, scrollData, UNSELECT_ITEM);
+    displayItem(aux, scrollData, UNSELECT_ITEM);
 
     //Check whether we move UP or Down
     switch (scrollData->scrollDirection) {
@@ -359,7 +359,7 @@ unselecting previous ite,
 	   scrollControl, scrollData->scrollActive, continueScroll);
 
     //Highlight new item
-    highlight_item(aux, scrollData, SELECT_ITEM);
+    displayItem(aux, scrollData, SELECT_ITEM);
 
     //Update selector pointer
     *selector = aux;
@@ -393,7 +393,13 @@ char selectorMenu(LISTCHOICE * aux, SCROLLDATA * scrollData) {
   //It break the loop everytime the boundaries are reached.
   //to reload a new list to show the scroll animation.
   while(control != CONTINUE_SCROLL) {
-    ch = getch();
+
+    //ch = getch();
+    ch=0;
+    Sleep(200);
+    if (GetAsyncKeyState(VK_UP) != 0) ch = K_UP_ARROW;
+    if (GetAsyncKeyState(VK_DOWN) !=0 ) ch = K_DOWN_ARROW;
+    if (GetAsyncKeyState(VK_RETURN) != 0) ch = K_ENTER;
 
     //if enter key pressed - break loop
     if(ch == K_ENTER)
@@ -538,7 +544,7 @@ int main() {
   system("cls");
   gotoxy(6,3);
   outputcolor(F_BLUE,BH_WHITE);
-  printf("Use 'w' up and 's' down for scroll");
+  printf("Use cursor up and cursor down for scroll");
   addItems(&listBox1);
 
   /*========================================================================*/
