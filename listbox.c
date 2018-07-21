@@ -1,7 +1,7 @@
 /*====================================================================*/
 /* +ListBox with double linked list and selection menu in C.
    +Scroll function added.
-   Last modified : 17/7/2018
+   Last modified : 21/7/2018
    Coded by Velorek.
    Target OS: Linux.                                                  */
 /*====================================================================*/
@@ -178,6 +178,7 @@ void deleteList(LISTCHOICE ** head) {
     free(p->item);
     free(p);			//remove item
   }
+  *head = NULL;
 }
 
 /* addend: add new LISTCHOICE to the end of a list  */
@@ -559,23 +560,28 @@ void addItems(LISTCHOICE ** listBox1) {
   *listBox1 = addend(*listBox1, newelement("Option 8"));
 }
 
+/* ---------------- */
+/* Main             */
+/* ---------------- */
+
+/*========================================================================*/
+/*  
+  ListBox with Scroll: 
+  ____________________
+  
+  Usage:
+   
+  listBox(headpointer, whereX, whereY, scrollData, backColor0, foreColor0,
+backcolor1, forecolor1, displayLimit); */
+
+/*========================================================================*/
+
 int main() {
   SCROLLDATA scrollData;
   char    ch;
 
   system("clear");
   addItems(&listBox1);
-
-  /*========================================================================*/
-  /* 
-     ListBox with Scroll: 
-     ____________________
-
-     Usage:
-     listBox(headpointer, whereX, whereY, scrollData, backColor0, foreColor0,
-     backcolor1, forecolor1, displayLimit);
-   */
-   /*=======================================================================*/
 
   ch = listBox(listBox1, 10, 8, &scrollData, B_BLACK, F_WHITE, B_BLUE,
 	       FH_WHITE, 3);
