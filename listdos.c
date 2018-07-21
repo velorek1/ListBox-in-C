@@ -1,7 +1,7 @@
 /*====================================================================*/
 /* +ListBox with double linked list and selection menu in C.
    +Scroll function added.
-   Last modified : 17/7/2018
+   Last modified : 21/7/2018
    Coded by Velorek.
    Target OS: DOS. NO ANSI                                            */
 /*====================================================================*/
@@ -209,6 +209,7 @@ void deleteList(LISTCHOICE ** head) {
     free(p->item);
     free(p);			/*remove item*/
   }
+ *head = NULL;
 }
 
 /* addend: add new LISTCHOICE to the end of a list  */
