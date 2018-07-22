@@ -130,8 +130,10 @@ void    displayItem(LISTCHOICE * aux, SCROLLDATA * scrollData, int select);
 int     listFiles(LISTCHOICE ** listBox1, char *directory);
 int     addSpaces(char temp[MAX_ITEM_LENGTH]);
 void    cleanString(char *string, int max);
+void    changeDir(SCROLLDATA * scrollData, char fullPath[MAX],
+		  char newDir[MAX]);
 
-/*====================================================================*/
+  /*====================================================================*/
 /* CODE */
 /*====================================================================*/
 
@@ -699,6 +701,35 @@ int listFiles(LISTCHOICE ** listBox1, char *directory) {
   return 0;
 }
 
+void changeDir(SCROLLDATA * scrollData, char fullPath[MAX],
+	       char newDir[MAX]) {
+//Change dir
+  char    oldPath[MAX];
+  if(scrollData->isDirectory == DIRECTORY) {
+    if(scrollData->itemIndex == 1) {
+      //cd ..
+      cleanString(fullPath, strlen(fullPath));
+      cleanString(oldPath, strlen(oldPath));
+      cleanString(newDir, strlen(newDir));
+      chdir("..");
+      getcwd(oldPath, sizeof(oldPath));
+      strcpy(newDir, oldPath);
+      strcpy(fullPath, oldPath);
+    } else {
+      //cd newDir
+      cleanString(fullPath, strlen(fullPath));
+      cleanString(newDir, strlen(newDir));
+      cleanString(oldPath, strlen(oldPath));
+      getcwd(oldPath, sizeof(oldPath));
+      strcat(oldPath, "/");
+      strcat(oldPath, scrollData->path);
+      chdir(oldPath);
+      strcpy(newDir, oldPath);
+      strcpy(fullPath, oldPath);
+    }
+  }
+}
+
 /* ---------------- */
 /* Main             */
 /* ---------------- */
@@ -725,6 +756,9 @@ int main() {
   clear();
 
   strcpy(newDir, ".");		//We start at current dir
+  //strcpy(fullPath, " ");      //Initialize full path
+
+  //fullPath = (char *)malloc(MAX);
   getcwd(fullPath, sizeof(fullPath));	//Get path
 
   //Directories loop
@@ -738,26 +772,9 @@ int main() {
 		 FH_WHITE, 10);
     deleteList(&listBox1);
 
-    //Change Dir
-    if(scrollData.isDirectory == DIRECTORY) {
-      if(scrollData.itemIndex == 1) {
-	//cd ..
-	cleanString(fullPath, strlen(fullPath));
-	cleanString(newDir, strlen(newDir));
-	chdir("..");
-	getcwd(fullPath, sizeof(fullPath));
-	strcpy(newDir, fullPath);
-      } else {
-	//cd newDir
-	cleanString(fullPath, strlen(fullPath));
-	cleanString(newDir, strlen(newDir));
-	getcwd(fullPath, sizeof(fullPath));
-	strcat(fullPath, "/");
-	strcat(fullPath, scrollData.path);
-	chdir(fullPath);
-	strcpy(newDir, fullPath);
-      }
-    }
+    //Change Dir. New directory is copied in newDir
+    changeDir(&scrollData, fullPath, newDir);
+
     //Display current path
     cleanLine(22, B_BLUE, F_BLUE);
     outputcolor(F_WHITE, B_BLUE);
