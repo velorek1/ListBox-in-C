@@ -756,9 +756,6 @@ int main() {
   clear();
 
   strcpy(newDir, ".");		//We start at current dir
-  //strcpy(fullPath, " ");      //Initialize full path
-
-  //fullPath = (char *)malloc(MAX);
   getcwd(fullPath, sizeof(fullPath));	//Get path
 
   //Directories loop
