@@ -71,9 +71,9 @@ typedef struct _scrolldata {
   unsigned currentListIndex;	//Pointer to new sublist of items when scrolling.
   unsigned displayLimit;	//No. of elements to be displayed.
   unsigned scrollDirection;	//To keep track of scrolling Direction.
-  unsigned wherex;
-  unsigned wherey;
   unsigned selector;		//Y++
+  unsigned wherex;		
+  unsigned wherey;		
   unsigned backColor0;		//0 unselected; 1 selected
   unsigned foreColor0;
   unsigned backColor1;
@@ -82,7 +82,6 @@ typedef struct _scrolldata {
   char   *item;
   char   *path;
   unsigned itemIndex;
-  LISTCHOICE *head;		//store head of the list
 } SCROLLDATA;
 
 /*====================================================================*/
@@ -225,17 +224,26 @@ LISTCHOICE *newelement(char *text, char *itemPath, unsigned itemType) {
 }
 
 // deleleteList: remove list from memory
-void deleteList(LISTCHOICE ** head) {
-  LISTCHOICE *p, *aux;
-  aux = *head;
-  while(aux->next != NULL) {
-    p = aux;
-    aux = aux->next;
-    free(p->item);
-    free(p);			//remove item
-  }
-  *head = NULL;
-}
+/* Function to delete the entire linked list */
+void deleteList(LISTCHOICE **head) 
+{ 
+   /* deref head_ref to get the real head */
+   LISTCHOICE *current = *head; 
+   LISTCHOICE *next = NULL; 
+  
+   while (current != NULL)  
+   { 
+       next = current->next; 
+       free(current->item);
+       free(current->path);
+       free(current);
+       current = next; 
+   } 
+    
+   /* deref head_ref to affect the real head back 
+      in the caller. */
+   *head = NULL; 
+} 
 
 /* addend: add new LISTCHOICE to the end of a list  */
 /* usage example: listBox1 = (addend(listBox1, newelement("Item")); */
@@ -449,9 +457,9 @@ unselecting previous item
 }
 
 char selectorMenu(LISTCHOICE * aux, SCROLLDATA * scrollData) {
-  char    ch;
+  char    ch=0;
   unsigned control = 0;
-  unsigned continueScroll;
+  unsigned continueScroll=0;
   unsigned counter = 0;
 
   //Go to and select expected item at the beginning
@@ -526,8 +534,6 @@ char selectorMenu(LISTCHOICE * aux, SCROLLDATA * scrollData) {
   if(ch == K_ENTER)		// enter key
   {
     //Pass data of last item selected.
-    scrollData->item = (char *)malloc(strlen(aux->item) + 1);
-    scrollData->path = (char *)malloc(strlen(aux->path) + 1);
     scrollData->item = aux->item;
     scrollData->itemIndex = aux->index;
     scrollData->path = aux->path;
@@ -546,8 +552,8 @@ char listBox(LISTCHOICE * head,
   //unsigned currentIndex = 0;
   int     scrollLimit = 0;
   unsigned currentListIndex = 0;
-  char    ch;
-  LISTCHOICE *aux;
+  char    ch=0;
+  LISTCHOICE *aux=NULL;
 
   // Query size of the list
   list_length = query_length(&head) + 1;
@@ -621,8 +627,8 @@ void cleanString(char *string, int max) {
   }
 }
 int listFiles(LISTCHOICE ** listBox1, char *directory) {
-  DIR    *d;
-  struct dirent *dir;
+  DIR    *d=NULL;
+  struct dirent *dir=NULL;
   int     i;
   char    temp[MAX_ITEM_LENGTH];
   int     lenDir;		//length of directory
@@ -708,18 +714,18 @@ void changeDir(SCROLLDATA * scrollData, char fullPath[MAX],
   if(scrollData->isDirectory == DIRECTORY) {
     if(scrollData->itemIndex == 1) {
       //cd ..
-      cleanString(fullPath, strlen(fullPath));
-      cleanString(oldPath, strlen(oldPath));
-      cleanString(newDir, strlen(newDir));
+      cleanString(fullPath, MAX);
+      cleanString(oldPath, MAX);
+      cleanString(newDir, MAX);
       chdir("..");
       getcwd(oldPath, sizeof(oldPath));
       strcpy(newDir, oldPath);
       strcpy(fullPath, oldPath);
     } else {
       //cd newDir
-      cleanString(fullPath, strlen(fullPath));
-      cleanString(newDir, strlen(newDir));
-      cleanString(oldPath, strlen(oldPath));
+      cleanString(fullPath, MAX);
+      cleanString(newDir, MAX);
+      cleanString(oldPath, MAX);
       getcwd(oldPath, sizeof(oldPath));
       strcat(oldPath, "/");
       strcat(oldPath, scrollData->path);
@@ -757,6 +763,24 @@ int main() {
 
   strcpy(newDir, ".");		//We start at current dir
   getcwd(fullPath, sizeof(fullPath));	//Get path
+  scrollData.scrollActive=0;	//To know whether scroll is active or not.
+  scrollData.scrollLimit=0;		//Last index for scroll.
+  scrollData.listLength=0;		//Total no. of items in the list
+  scrollData.currentListIndex=0;	//Pointer to new sublist of items when scrolling.
+  scrollData.displayLimit=0;	//No. of elements to be displayed.
+  scrollData.scrollDirection=0;	//To keep track of scrolling Direction.
+  scrollData.selector=0;		//Y++
+  scrollData.wherex=0;		
+  scrollData.wherey=0;		
+  scrollData.backColor0=0;		//0 unselected; 1 selected
+  scrollData.foreColor0=0;
+  scrollData.backColor1=0;
+  scrollData.foreColor1=0;
+  scrollData.isDirectory=0;		// Kind of item
+  scrollData.item =NULL;
+  scrollData.path =NULL;
+  scrollData.itemIndex=0;
+  //LISTCHOICE *head;		//store head of the list
 
   //Directories loop
   do {
@@ -764,13 +788,13 @@ int main() {
     draw_window(8, 6, 30, 18, B_WHITE);	//window
 
     //Add items to list
-    listFiles(&listBox1, newDir);
+    if(listBox1 == NULL) 
+      listFiles(&listBox1, newDir);
     ch = listBox(listBox1, 10, 7, &scrollData, B_WHITE, F_BLACK, B_BLUE,
 		 FH_WHITE, 10);
-    deleteList(&listBox1);
 
     //Change Dir. New directory is copied in newDir
-    changeDir(&scrollData, fullPath, newDir);
+    if (scrollData.itemIndex!=0) changeDir(&scrollData, fullPath, newDir);
 
     //Display current path
     cleanLine(22, B_BLUE, F_BLUE);
@@ -785,8 +809,12 @@ int main() {
     printf("Item selected: %s | Index: %d | Key : %d\n",
 	   scrollData.path, scrollData.itemIndex, ch);
 
+    if(listBox1 != NULL) {
+		deleteList(&listBox1);
+		listBox1 = NULL;
+    }
   } while(scrollData.itemIndex != 0);
-  //Restore colors.
+ //Restore colors.
   outputcolor(F_WHITE, B_BLACK);
   clear();
   printf("\n");
