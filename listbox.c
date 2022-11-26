@@ -170,13 +170,14 @@ LISTCHOICE *newelement(char *text) {
 
 // deleleteList: remove list from memory
 void deleteList(LISTCHOICE ** head) {
-  LISTCHOICE *p, *aux;
-  aux = *head;
-  while(aux->next != NULL) {
-    p = aux;
-    aux = aux->next;
-    free(p->item);
-    free(p);			//remove item
+  LISTCHOICE *aux=*head;
+  LISTCHOICE *next = NULL;
+  while(aux != NULL) {
+    next = aux->next;
+    //aux = aux->next;
+    free(aux->item);
+    free(aux);			//remove item
+    aux=next;
   }
   *head = NULL;
 }
@@ -208,8 +209,13 @@ void gotoIndex(LISTCHOICE ** aux, SCROLLDATA * scrollData,
 {
   LISTCHOICE *aux2;
   unsigned counter = 0;
-  *aux = listBox1;
+  //*aux = listBox1;
   aux2 = *aux;
+  //Make sure we are at the beginning//rewind position
+  while (aux2->index != 0){
+     if (aux2 == NULL) break;
+     aux2 = aux2->back;
+  }
   while(counter != indexAt) {
     aux2 = aux2->next;
     counter++;
@@ -392,9 +398,9 @@ unselecting previous item
 }
 
 char selectorMenu(LISTCHOICE * aux, SCROLLDATA * scrollData) {
-  char    ch;
+  char    ch=0;
   unsigned control = 0;
-  unsigned continueScroll;
+  unsigned continueScroll=0;
   unsigned counter = 0;
 
   //Go to and select expected item at the beginning
@@ -487,8 +493,8 @@ char listBox(LISTCHOICE * head,
   //unsigned currentIndex = 0;
   int     scrollLimit = 0;
   unsigned currentListIndex = 0;
-  char    ch;
-  LISTCHOICE *aux;
+  char    ch=0;
+  LISTCHOICE *aux = NULL;
 
   // Query size of the list
   list_length = query_length(&head) + 1;
